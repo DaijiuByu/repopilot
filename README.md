@@ -23,6 +23,20 @@ The model, when enabled, receives evidence only and cannot call tools or edit
 files. All file and process operations remain in the deterministic workflow.
 Without an API key, the same useful evidence report works completely offline.
 
+For quantitative research, `research-plan` turns a natural-language question
+into an allow-listed FactorLab experiment plan. It extracts only registered
+factors and bounded lookbacks, then records point-in-time, walk-forward,
+turnover, cost, quantile, and significance checks for human review:
+
+```bash
+repopilot research-plan \
+  --question "检查 20 日动量因子的样本外表现" \
+  --dataset demo_panel
+```
+
+The plan is declarative and requires explicit backend confirmation; RepoPilot
+never executes model-generated code.
+
 ## Quick start
 
 ```bash
@@ -76,6 +90,8 @@ limits, and audit logging.
   code, run the project inside a disposable container or use a separate
   sandbox. ToolForge is a policy layer, not an OS sandbox.
 - A report is evidence for a human reviewer, not proof of a root cause or fix.
+- Quant research plans are hypotheses, not claims of predictive power; all
+  performance conclusions must come from FactorLab artifacts.
 
 ## Development
 

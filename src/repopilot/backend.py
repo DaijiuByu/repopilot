@@ -33,6 +33,16 @@ class ToolBackend(Protocol):
 
     def run_test(self, command: list[str], timeout_ms: int = 30_000) -> dict[str, Any]: ...
 
+    def research(
+        self,
+        task: str,
+        dataset: str,
+        factor: str,
+        lookback: int,
+        quantile: float = 0.2,
+        cost_bps: float = 5.0,
+    ) -> dict[str, Any]: ...
+
 
 def _bounded(value: str, limit: int = MAX_OUTPUT_CHARS) -> str:
     if len(value) <= limit:
@@ -152,6 +162,7 @@ class LocalBackend:
                 "timed_out": False,
                 "duration_ms": round((time.monotonic() - started) * 1_000),
             }
+
         except subprocess.TimeoutExpired as exc:
             return {
                 "command": command,
@@ -162,6 +173,40 @@ class LocalBackend:
                 "timed_out": True,
                 "duration_ms": round((time.monotonic() - started) * 1_000),
             }
+
+    def research(
+        self,
+        task: str,
+        dataset: str,
+        factor: str,
+        lookback: int,
+        quantile: float = 0.2,
+        cost_bps: float = 5.0,
+    ) -> dict[str, Any]:
+        """Validate a declarative FactorLab request locally."""
+
+        if task != "backtest":
+            raise ValueError("research task must be backtest")
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", dataset):
+            raise ValueError("dataset must be a safe non-empty name")
+        if factor not in {"momentum", "reversal", "low_volatility", "column"}:
+            raise ValueError("factor is not registered")
+        if not 2 <= lookback <= 10_000:
+            raise ValueError("lookback must be between 2 and 10000")
+        if not 0.01 <= quantile <= 0.49:
+            raise ValueError("quantile must be between 0.01 and 0.49")
+        if cost_bps < 0:
+            raise ValueError("cost_bps must be non-negative")
+        return {
+            "accepted": True,
+            "task": task,
+            "dataset": dataset,
+            "factor": factor,
+            "lookback": lookback,
+            "quantile": quantile,
+            "cost_bps": cost_bps,
+            "execution": "local_preview",
+        }
 
 
 class HarnessBackend:
@@ -222,6 +267,27 @@ class HarnessBackend:
 
     def run_test(self, command: list[str], timeout_ms: int = 30_000) -> dict[str, Any]:
         return self._request({"tool": "run_test", "command": command, "timeout_ms": timeout_ms})
+
+    def research(
+        self,
+        task: str,
+        dataset: str,
+        factor: str,
+        lookback: int,
+        quantile: float = 0.2,
+        cost_bps: float = 5.0,
+    ) -> dict[str, Any]:
+        return self._request(
+            {
+                "tool": "research",
+                "task": task,
+                "dataset": dataset,
+                "factor": factor,
+                "lookback": lookback,
+                "quantile": quantile,
+                "cost_bps": cost_bps,
+            }
+        )
 
 
 def detect_test_command(files: list[str]) -> list[str] | None:

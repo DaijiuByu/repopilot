@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from .agent import analyze, build_synthesizer
+from .agent import analyze, build_research_plan, build_synthesizer
 from .backend import HarnessBackend, LocalBackend
 
 
@@ -23,11 +23,35 @@ def _parser() -> argparse.ArgumentParser:
     analyze_parser.add_argument("--no-model", action="store_true", help="disable optional model synthesis")
     analyze_parser.add_argument("--output", type=Path, help="write Markdown report to this path")
     analyze_parser.add_argument("--json", action="store_true", help="print machine-readable JSON")
+    plan_parser = subparsers.add_parser(
+        "research-plan", help="turn a quant research question into a safe FactorLab plan"
+    )
+    plan_parser.add_argument("--question", required=True)
+    plan_parser.add_argument("--dataset", default="demo_panel")
+    plan_parser.add_argument("--lookback", type=int, default=20)
+    plan_parser.add_argument("--quantile", type=float, default=0.2)
+    plan_parser.add_argument("--cost-bps", type=float, default=5.0)
+    plan_parser.add_argument("--json", action="store_true")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if args.command == "research-plan":
+        try:
+            plan = build_research_plan(
+                args.question,
+                dataset=args.dataset,
+                default_lookback=args.lookback,
+                quantile=args.quantile,
+                cost_bps=args.cost_bps,
+            )
+            rendered = json.dumps(plan.as_dict(), ensure_ascii=False, indent=2)
+            print(rendered)
+            return 0
+        except (ValueError, json.JSONDecodeError) as exc:
+            print(f"repopilot: {exc}", file=sys.stderr)
+            return 1
     if args.command != "analyze":
         return 2
     try:

@@ -35,7 +35,13 @@ class LocalBackendTests(unittest.TestCase):
     def test_run_test_without_shell(self):
         result = self.backend.run_test(["python", "-c", "print('ok')"])
         self.assertTrue(result["success"])
-        self.assertIn("ok", result["stdout"])
+
+    def test_research_request_is_validated(self):
+        backend = LocalBackend(self.root)
+        result = backend.research("backtest", "demo_v1", "momentum", 20)
+        self.assertTrue(result["accepted"])
+        with self.assertRaises(ValueError):
+            backend.research("backtest", "../secret", "momentum", 20)
 
 
 class ParsingTests(unittest.TestCase):

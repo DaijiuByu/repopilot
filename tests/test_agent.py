@@ -1,6 +1,6 @@
 import unittest
 
-from repopilot.agent import analyze
+from repopilot.agent import analyze, build_research_plan
 from repopilot.backend import LocalBackend
 
 
@@ -26,6 +26,12 @@ class FakeBackend:
 
 
 class AgentTests(unittest.TestCase):
+    def test_research_plan_is_allow_listed_and_deterministic(self):
+        plan = build_research_plan("检查 20 日动量因子，成本 5bp", dataset="demo_v1")
+        self.assertEqual(plan.factor, "momentum")
+        self.assertEqual(plan.lookback, 20)
+        self.assertEqual(plan.as_dict()["execution"], "requires_explicit_backend_confirmation")
+
     def test_analysis_is_structured_and_does_not_modify_files(self):
         backend = FakeBackend()
         report = analyze("login timeout", backend)

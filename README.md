@@ -37,6 +37,11 @@ repopilot research-plan \
 The plan is declarative and requires explicit backend confirmation; RepoPilot
 never executes model-generated code.
 
+Each plan includes a schema version, a stable `plan_id`, and an explicit
+`factorlab_args` payload. This makes plans easy to deduplicate, review, and
+attach to a downstream experiment manifest without granting the planner
+execution privileges.
+
 ## Quick start
 
 ```bash
@@ -86,6 +91,8 @@ limits, and audit logging.
 - File paths are constrained to the repository root; symlinks and common build
   directories are skipped.
 - Test commands use `shell=False` and a small executable allow-list.
+- Local execution also bounds command argument count and size, matching the
+  ToolForge backend defaults.
 - Test execution can still mutate files inside the repository. For untrusted
   code, run the project inside a disposable container or use a separate
   sandbox. ToolForge is a policy layer, not an OS sandbox.

@@ -30,7 +30,16 @@ class AgentTests(unittest.TestCase):
         plan = build_research_plan("检查 20 日动量因子，成本 5bp", dataset="demo_v1")
         self.assertEqual(plan.factor, "momentum")
         self.assertEqual(plan.lookback, 20)
+        self.assertEqual(len(plan.plan_id), 16)
+        self.assertEqual(plan.as_dict()["schema_version"], 1)
+        self.assertEqual(plan.as_dict()["factorlab_args"]["lookback"], 20)
         self.assertEqual(plan.as_dict()["execution"], "requires_explicit_backend_confirmation")
+
+    def test_research_plan_rejects_unsafe_parameters(self):
+        with self.assertRaises(ValueError):
+            build_research_plan("momentum", dataset="../secret")
+        with self.assertRaises(ValueError):
+            build_research_plan("momentum", quantile=0.9)
 
     def test_analysis_is_structured_and_does_not_modify_files(self):
         backend = FakeBackend()

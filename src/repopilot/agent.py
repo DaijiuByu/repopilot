@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import math
 import os
 import re
 import urllib.error
@@ -87,8 +89,37 @@ class QuantResearchPlan:
     cost_bps: float
     checks: tuple[str, ...]
 
+    @property
+    def plan_id(self) -> str:
+        """Stable identifier for deduplicating and auditing experiments."""
+
+        payload = {
+            "question": self.question,
+            "dataset": self.dataset,
+            "factor": self.factor,
+            "lookback": self.lookback,
+            "quantile": self.quantile,
+            "cost_bps": self.cost_bps,
+            "checks": self.checks,
+        }
+        encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()[:16]
+
+    def factorlab_args(self) -> dict[str, object]:
+        """Return an explicit, side-effect-free FactorLab argument payload."""
+
+        return {
+            "input": self.dataset,
+            "factor": self.factor,
+            "lookback": self.lookback,
+            "quantile": self.quantile,
+            "cost_bps": self.cost_bps,
+        }
+
     def as_dict(self) -> dict[str, Any]:
         return {
+            "schema_version": 1,
+            "plan_id": self.plan_id,
             "question": self.question,
             "dataset": self.dataset,
             "factor": self.factor,
@@ -96,6 +127,7 @@ class QuantResearchPlan:
             "quantile": self.quantile,
             "cost_bps": self.cost_bps,
             "checks": list(self.checks),
+            "factorlab_args": self.factorlab_args(),
             "execution": "requires_explicit_backend_confirmation",
         }
 
@@ -116,6 +148,12 @@ def build_research_plan(
 
     if not question.strip():
         raise ValueError("research question must not be empty")
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", dataset):
+        raise ValueError("dataset must be a safe non-empty name")
+    if not math.isfinite(quantile) or not 0.01 <= quantile <= 0.49:
+        raise ValueError("quantile must be between 0.01 and 0.49")
+    if not math.isfinite(cost_bps) or cost_bps < 0:
+        raise ValueError("cost_bps must be non-negative")
     lowered = question.lower()
     factor = "momentum"
     for candidate, aliases in (

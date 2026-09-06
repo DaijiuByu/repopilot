@@ -20,6 +20,8 @@ from typing import Any, Protocol
 
 MAX_FILE_BYTES = 256 * 1024
 MAX_OUTPUT_CHARS = 32 * 1024
+MAX_ARGUMENTS = 32
+MAX_ARGUMENT_BYTES = 4 * 1024
 SKIP_DIRS = {".git", ".hg", ".svn", ".venv", "__pycache__", "node_modules", "target", "dist", "build"}
 ALLOWED_COMMANDS = {"cargo", "pytest", "python", "python3", "npm", "go", "dotnet"}
 
@@ -138,6 +140,12 @@ class LocalBackend:
             raise ValueError("command is not allow-listed")
         if any("\x00" in argument for argument in command):
             raise ValueError("command contains a NUL byte")
+        if len(command) > MAX_ARGUMENTS:
+            raise ValueError(f"command has too many arguments (limit {MAX_ARGUMENTS})")
+        if any(len(argument) > MAX_ARGUMENT_BYTES for argument in command):
+            raise ValueError(
+                f"command argument exceeds the {MAX_ARGUMENT_BYTES} byte limit"
+            )
         timeout = min(max(timeout_ms, 1), 120_000) / 1_000
         started = time.monotonic()
         try:

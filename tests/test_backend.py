@@ -36,6 +36,12 @@ class LocalBackendTests(unittest.TestCase):
         result = self.backend.run_test(["python", "-c", "print('ok')"])
         self.assertTrue(result["success"])
 
+    def test_run_test_enforces_argument_budget(self):
+        with self.assertRaises(ValueError):
+            self.backend.run_test(["python"] + ["x"] * 40)
+        with self.assertRaises(ValueError):
+            self.backend.run_test(["python", "x" * 5000])
+
     def test_research_request_is_validated(self):
         backend = LocalBackend(self.root)
         result = backend.research("backtest", "demo_v1", "momentum", 20)

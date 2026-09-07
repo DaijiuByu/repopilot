@@ -42,6 +42,21 @@ Each plan includes a schema version, a stable `plan_id`, and an explicit
 attach to a downstream experiment manifest without granting the planner
 execution privileges.
 
+For a local, fixed-command end-to-end run, pass the FactorLab checkout
+explicitly:
+
+```bash
+repopilot run-research \
+  --question "检查 20 日动量因子的样本外表现" \
+  --input ../factorlab/demo_panel.csv \
+  --factorlab-root ../factorlab \
+  --output research_run
+```
+
+The bridge writes the reviewed plan and invokes only
+`python -m factorlab.cli experiment --config ...` with `shell=False`; it never
+turns model text into a shell command.
+
 ## Quick start
 
 ```bash

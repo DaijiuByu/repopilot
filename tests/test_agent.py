@@ -1,7 +1,10 @@
 import unittest
 
 from repopilot.agent import analyze, build_research_plan
-from repopilot.backend import LocalBackend
+from repopilot.orchestrator import run_factorlab_experiment
+from pathlib import Path
+import tempfile
+from datetime import date, timedelta
 
 
 class FakeBackend:
@@ -40,6 +43,28 @@ class AgentTests(unittest.TestCase):
             build_research_plan("momentum", dataset="../secret")
         with self.assertRaises(ValueError):
             build_research_plan("momentum", quantile=0.9)
+
+    def test_run_research_bridge_uses_fixed_factorlab_command(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            panel = root / "panel.csv"
+            rows = ["date,ticker,close"]
+            for day in range(40):
+                day_text = (date(2024, 1, 1) + timedelta(days=day)).isoformat()
+                for asset in range(8):
+                    rows.append(f"{day_text},A{asset},{100 + day + asset / 10:.4f}")
+            panel.write_text("\n".join(rows), encoding="utf-8")
+            result = run_factorlab_experiment(
+                "检查 5 日动量因子的样本外表现",
+                input_path=panel,
+                output_dir=root / "run",
+                factorlab_root=Path("D:/1_d_github/factorlab"),
+                lookback=5,
+                timeout_seconds=120,
+            )
+            self.assertTrue(result["success"], result["stderr"])
+            self.assertIn("factorlab.cli", " ".join(result["command"]))
+            self.assertTrue((root / "run" / "research_plan.json").exists())
 
     def test_analysis_is_structured_and_does_not_modify_files(self):
         backend = FakeBackend()

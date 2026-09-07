@@ -1,4 +1,8 @@
 __pycache__/
+.env
+*.pem
+*_token*
+*_secret*
 *.py[cod]
 .pytest_cache/
 .venv/

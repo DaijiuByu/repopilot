@@ -263,7 +263,7 @@ def analyze(issue: str, backend: ToolBackend, synthesizer: Synthesizer | None = 
             continue
         try:
             content = backend.read_file(path).get("content", "")
-        except (OSError, RuntimeError, ValueError) as exc:
+        except (OSError, RuntimeError, ValueError):
             continue
         inspected.append({"path": path, "excerpt": content[:2_000]})
 

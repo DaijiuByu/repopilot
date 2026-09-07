@@ -8,10 +8,10 @@ lets a Rust process own execution policy.
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import re
 import subprocess
-import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -205,8 +205,16 @@ class LocalBackend:
             raise ValueError("quantile must be between 0.01 and 0.49")
         if cost_bps < 0:
             raise ValueError("cost_bps must be non-negative")
+        run_id = hashlib.sha256(
+            json.dumps(
+                {"dataset": dataset, "factor": factor, "lookback": lookback,
+                 "quantile": quantile, "cost_bps": cost_bps}, sort_keys=True
+            ).encode("utf-8")
+        ).hexdigest()[:16]
         return {
             "accepted": True,
+            "schema_version": 1,
+            "run_id": run_id,
             "task": task,
             "dataset": dataset,
             "factor": factor,
@@ -288,6 +296,13 @@ class HarnessBackend:
         return self._request(
             {
                 "tool": "research",
+                "schema_version": 1,
+                "run_id": hashlib.sha256(
+                    json.dumps(
+                        {"dataset": dataset, "factor": factor, "lookback": lookback,
+                         "quantile": quantile, "cost_bps": cost_bps}, sort_keys=True
+                    ).encode("utf-8")
+                ).hexdigest()[:16],
                 "task": task,
                 "dataset": dataset,
                 "factor": factor,

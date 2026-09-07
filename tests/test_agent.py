@@ -65,6 +65,9 @@ class AgentTests(unittest.TestCase):
             self.assertTrue(result["success"], result["stderr"])
             self.assertIn("factorlab.cli", " ".join(result["command"]))
             self.assertTrue((root / "run" / "research_plan.json").exists())
+            self.assertEqual(result["timed_out"], False)
+            self.assertEqual(result["experiment_result"]["config"]["lookback"], 5)
+            self.assertTrue(Path(result["artifacts"]).joinpath("run_manifest.json").exists())
 
     def test_analysis_is_structured_and_does_not_modify_files(self):
         backend = FakeBackend()

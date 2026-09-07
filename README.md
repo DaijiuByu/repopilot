@@ -55,7 +55,10 @@ repopilot run-research \
 
 The bridge writes the reviewed plan and invokes only
 `python -m factorlab.cli experiment --config ...` with `shell=False`; it never
-turns model text into a shell command.
+turns model text into a shell command. The returned JSON includes optional
+ToolForge `validation`, the exact config path, artifact directory, subprocess
+status/timeout, and parsed `metrics.json` so an orchestrator can persist one
+joinable record for the full study.
 
 ## Quick start
 

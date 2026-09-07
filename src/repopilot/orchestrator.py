@@ -139,10 +139,22 @@ def run_factorlab_experiment(
     if completed is not None:
         stdout = completed.stdout
         stderr = completed.stderr
+    artifacts = output / "factorlab_artifacts"
+    experiment_result: dict[str, Any] | None = None
+    metrics_path = artifacts / "metrics.json"
+    if completed is not None and completed.returncode == 0 and metrics_path.is_file():
+        try:
+            experiment_result = json.loads(metrics_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            # The subprocess status remains authoritative; malformed optional
+            # artifacts are surfaced as a missing result instead of masking it.
+            experiment_result = None
     return {
         "plan": plan.as_dict(),
         "validation": validation,
         "config": str(config_path),
+        "artifacts": str(artifacts),
+        "experiment_result": experiment_result,
         "command": completed.args if completed is not None else [sys.executable, "-m", "factorlab.cli", "experiment", "--config", str(config_path)],
         "success": completed is not None and completed.returncode == 0,
         "exit_code": completed.returncode if completed is not None else None,

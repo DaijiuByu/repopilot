@@ -37,7 +37,8 @@ repopilot research-plan \
 The plan is declarative and requires explicit backend confirmation; RepoPilot
 never executes model-generated code.
 
-Each plan includes schema version 2, a stable `plan_id`, an explicit
+Each plan includes a backwards-compatible schema version plus protocol version
+2, a stable `plan_id`, an explicit
 `factorlab_args` payload, benchmark/placebo controls, an OOS policy, and model
 provenance fields. This makes plans easy to deduplicate, review, and attach to
 a downstream experiment manifest without granting the planner execution

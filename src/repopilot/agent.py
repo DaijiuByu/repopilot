@@ -149,6 +149,7 @@ class QuantResearchPlan:
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": self.schema_version,
+            "protocol_version": 2,
             "plan_id": self.plan_id,
             "question": self.question,
             "dataset": self.dataset,

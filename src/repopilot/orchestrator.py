@@ -39,6 +39,15 @@ def run_factorlab_experiment(
     research_trials: int = 1,
     sector_neutral: bool = False,
     split_date: str | None = None,
+    market_mode: str = "long_short",
+    t_plus_one: bool = True,
+    lot_size: int = 100,
+    sell_tax_bps: float = 5.0,
+    cost_mode: str = "components",
+    covariance_window: int = 60,
+    covariance_shrinkage: float = 0.1,
+    data_version: str | None = None,
+    membership_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Generate a plan and execute only the fixed FactorLab experiment CLI.
 
@@ -61,6 +70,7 @@ def run_factorlab_experiment(
         default_lookback=lookback,
         quantile=quantile,
         cost_bps=cost_bps,
+        data_version=data_version,
     )
     validation: dict[str, Any] | None = None
     backend: ToolBackend | None = None
@@ -105,6 +115,17 @@ def run_factorlab_experiment(
         "research_trials": research_trials,
         "sector_neutral": sector_neutral,
         "split_date": split_date,
+        "market_mode": market_mode,
+        "t_plus_one": t_plus_one,
+        "lot_size": lot_size,
+        "sell_tax_bps": sell_tax_bps,
+        "cost_mode": cost_mode,
+        "covariance_window": covariance_window,
+        "covariance_shrinkage": covariance_shrinkage,
+        "membership": str(Path(membership_path).resolve()) if membership_path else None,
+        "data_version": data_version,
+        "benchmark_suite": list(plan.benchmark_suite),
+        "oos_policy": plan.oos_policy,
     }
     config_path.write_text(json.dumps(config, indent=2), encoding="utf-8")
     environment = os.environ.copy()

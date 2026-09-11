@@ -88,6 +88,18 @@ class QuantResearchPlan:
     quantile: float
     cost_bps: float
     checks: tuple[str, ...]
+    schema_version: int = 1
+    hypothesis: str = ""
+    benchmark_suite: tuple[str, ...] = (
+        "equal_weight_market",
+        "random_placebo",
+        "direction_reversed",
+        "raw_vs_sector_neutral",
+    )
+    oos_policy: str = "purged_walk_forward_with_embargo"
+    data_version: str | None = None
+    model: str | None = None
+    prompt_version: str = "repopilot-plan-v2"
 
     @property
     def plan_id(self) -> str:
@@ -101,6 +113,13 @@ class QuantResearchPlan:
             "quantile": self.quantile,
             "cost_bps": self.cost_bps,
             "checks": self.checks,
+            "schema_version": 1,
+            "plan_schema_version": 2,
+            "benchmark_suite": self.benchmark_suite,
+            "oos_policy": self.oos_policy,
+            "data_version": self.data_version,
+            "model": self.model,
+            "prompt_version": self.prompt_version,
         }
         encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()[:16]
@@ -114,11 +133,22 @@ class QuantResearchPlan:
             "lookback": self.lookback,
             "quantile": self.quantile,
             "cost_bps": self.cost_bps,
+            "market_mode": "long_short",
+            "execution": {
+                "t_plus_one": True,
+                "lot_size": 100,
+                "sell_tax_bps": 5.0,
+                "exclude_suspended": True,
+                "exclude_limit_up_down": True,
+            },
+            "cost_mode": "components",
+            "oos_policy": self.oos_policy,
+            "benchmark_suite": list(self.benchmark_suite),
         }
 
     def as_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": 1,
+            "schema_version": self.schema_version,
             "plan_id": self.plan_id,
             "question": self.question,
             "dataset": self.dataset,
@@ -127,6 +157,12 @@ class QuantResearchPlan:
             "quantile": self.quantile,
             "cost_bps": self.cost_bps,
             "checks": list(self.checks),
+            "hypothesis": self.hypothesis or self.question,
+            "benchmark_suite": list(self.benchmark_suite),
+            "oos_policy": self.oos_policy,
+            "data_version": self.data_version,
+            "model": self.model,
+            "prompt_version": self.prompt_version,
             "factorlab_args": self.factorlab_args(),
             "execution": "requires_explicit_backend_confirmation",
         }
@@ -139,6 +175,8 @@ def build_research_plan(
     default_lookback: int = 20,
     quantile: float = 0.2,
     cost_bps: float = 5.0,
+    data_version: str | None = None,
+    model: str | None = None,
 ) -> QuantResearchPlan:
     """Extract only allow-listed research parameters from a user question.
 
@@ -183,6 +221,9 @@ def build_research_plan(
         quantile=quantile,
         cost_bps=cost_bps,
         checks=checks,
+        hypothesis=question.strip(),
+        data_version=data_version,
+        model=model,
     )
 
 
